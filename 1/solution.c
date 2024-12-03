@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "libcoro.h"
+#include <assert.h>
 #define MAX_ELEMENTS_IN_FILE 100001
 
 /**
@@ -58,7 +59,7 @@ static int coroutine_func_f(void *context)
 	coro *this = coro_this();
 	my_context *ctx = context;
 	char *name = ctx->name;
-	printf("Started coroutine %s\n", name);
+	printf("Started coroutine in ctx %s\n", name);
 	printf("%s: ctx switch count %lld\n", name, coro_switch_count(this));
 	printf("%s: yield\n", name);
 	coro_yield();
@@ -75,6 +76,86 @@ static int coroutine_func_f(void *context)
 	my_context_delete(ctx);
 	/* This will be returned from coro_status(). */
 	return 0;
+}
+
+static int MS_coro_start(void *context){
+	coro *this = coro_this();
+	my_context *ctx = context;
+	char *name = ctx->name;
+	//TODO: надо имплементировать
+}
+
+/*
+
+main(){
+	int[] array, int size;
+	
+	mergesort(array, size)
+}
+
+int[] mergesort(int* ints, int size){
+	if (size == 1){
+		return ints;
+
+	int mid;
+
+	sizeA = mid-0;
+	int[] a = mergesort(ints[0], mid);
+
+	sizeB = size-mid;
+	int[] b = mergesort(ints[mid], size-mid);
+	 
+	int counterA = 0, counterB=0, counterRes=0;
+	int[size] result;
+
+	while (counterA < sizeA || counterB < sizeB){
+		if (counterA == sizeA){
+			result[counterRes++]=b[counterB++];
+		}else if (counterB == sizeB){
+			result[counterRes++]=a[counterA++];
+		} else {
+			if (a[counterA]<b[counterB]){
+				result[counterRes++]=a[counterA++];
+			} else{
+			    result[counterRes++]=b[counterB++];
+			}
+		}
+	}
+	return result;
+}
+*/
+
+
+static int* simple_merge_sort(int* ints, int size, char ab){
+	int mid = size/2;
+	int sizeA = mid-0;
+	int sizeB = size-mid;
+	assert(size>0);
+	
+	if (size==1){return &ints[0];}
+	
+	int	*a = simple_merge_sort(ints,			mid, 'a');
+	
+	int	*b = simple_merge_sort(&ints[mid],	size-mid, 'b');
+	
+	int counterA = 0, counterB=0, counterRes=0;
+	int *result = malloc(size * sizeof(int));
+
+	while (counterA < sizeA || counterB < sizeB){
+		if (counterA == sizeA){
+			result[counterRes++]=b[counterB++];
+		}else if (counterB == sizeB){
+			result[counterRes++]=a[counterA++];
+		} else {
+			if (a[counterA]<b[counterB]){
+				result[counterRes++]=a[counterA++];
+			} else{
+			    result[counterRes++]=b[counterB++];
+			}
+		}
+	}
+
+	return result;
 }
 
 int main(int argc, char **argv)
@@ -101,6 +182,9 @@ int main(int argc, char **argv)
 		}
     printf("test %d %d\n", p_arrays[0][0], p_arrays[0][1]);
 
+	int testArr[] = {5,4,3,2,1};
+	int* sortedArr = simple_merge_sort(testArr, 5, 's');
+	for(int i = 0; i <3;i++){printf("test %d %d\n", i, sortedArr[i]);}
 
 	/* Initialize our coroutine global cooperative scheduler. */
 	coro_sched_init();
