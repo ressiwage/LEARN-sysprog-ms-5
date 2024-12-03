@@ -10,21 +10,21 @@
  * $> ./a.out
  */
 
-struct my_context {
+typedef struct my_context{
 	char *name;
 	/** ADD HERE YOUR OWN MEMBERS, SUCH AS FILE NAME, WORK TIME, ... */
-};
+} my_context;
 
-static struct my_context *
-my_context_new(const char *name)
+typedef struct coro coro;
+
+static my_context* my_context_new(const char *name)
 {
-	struct my_context *ctx = malloc(sizeof(*ctx));
+	my_context *ctx = malloc(sizeof(*ctx));
 	ctx->name = strdup(name);
 	return ctx;
 }
 
-static void
-my_context_delete(struct my_context *ctx)
+static void my_context_delete(my_context *ctx)
 {
 	free(ctx->name);
 	free(ctx);
@@ -35,8 +35,7 @@ my_context_delete(struct my_context *ctx)
  * the example. You can split your code into multiple functions, that usually
  * helps to keep the individual code blocks simple.
  */
-static void
-other_function(const char *name, int depth)
+static void other_function(const char *name, int depth)
 {
 	printf("%s: entered function, depth = %d\n", name, depth);
 	coro_yield();
@@ -48,13 +47,12 @@ other_function(const char *name, int depth)
  * Coroutine body. This code is executed by all the coroutines. Here you
  * implement your solution, sort each individual file.
  */
-static int
-coroutine_func_f(void *context)
+static int coroutine_func_f(void *context)
 {
 	/* IMPLEMENT SORTING OF INDIVIDUAL FILES HERE. */
 
-	struct coro *this = coro_this();
-	struct my_context *ctx = context;
+	coro *this = coro_this();
+	my_context *ctx = context;
 	char *name = ctx->name;
 	printf("Started coroutine %s\n", name);
 	printf("%s: switch count %lld\n", name, coro_switch_count(this));
@@ -75,8 +73,7 @@ coroutine_func_f(void *context)
 	return 0;
 }
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	/* Delete these suppressions when start using the args. */
 	(void)argc;
@@ -99,7 +96,7 @@ main(int argc, char **argv)
 		coro_new(coroutine_func_f, my_context_new(name));
 	}
 	/* Wait for all the coroutines to end. */
-	struct coro *c;
+	coro *c;
 	while ((c = coro_sched_wait()) != NULL) {
 		/*
 		 * Each 'wait' returns a finished coroutine with which you can
