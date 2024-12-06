@@ -8,13 +8,6 @@
 #define MAX_ELEMENTS_IN_FILE 100001
 #define PRINT_SORTED_ARRAYS 0
 
-/**
- * You can compile and run this code using the commands:
- *
- * $> gcc solution.c libcoro.c
- * $> ./a.out
- */
-
 typedef struct my_context{
 	char *name;
 	int num_coroutines;
@@ -41,48 +34,6 @@ static void my_context_delete(my_context *ctx)
 	free(ctx);
 }
 
-/**
- * A function, called from inside of coroutines recursively. Just to demonstrate
- * the example. You can split your code into multiple functions, that usually
- * helps to keep the individual code blocks simple.
- */
-static void other_function(const char *name, int depth)
-{
-	printf("%s: entered function, depth = %d\n", name, depth);
-	coro_yield();
-	if (depth < 3)
-		other_function(name, depth + 1);
-}
-
-/**
- * Coroutine body. This code is executed by all the coroutines. Here you
- * implement your solution, sort each individual file.
- */
-static int coroutine_func_f(void *context)
-{
-	/* IMPLEMENT SORTING OF INDIVIDUAL FILES HERE. */
-
-	coro *this = coro_this();
-	my_context *ctx = context;
-	char *name = ctx->name;
-	printf("Started coroutine in ctx %s\n", name);
-	printf("%s: ctx switch count %lld\n", name, coro_switch_count(this));
-	printf("%s: yield\n", name);
-	coro_yield();
-
-	printf("%s: ctx switch count %lld\n", name, coro_switch_count(this));
-	printf("%s: yield\n", name);
-	coro_yield();
-
-	printf("%s: ctx switch count %lld\n", name, coro_switch_count(this));
-	other_function(name, 1);
-	printf("%s: ctx switch count after other function %lld\n", name,
-	       coro_switch_count(this));
-
-	my_context_delete(ctx);
-	/* This will be returned from coro_status(). */
-	return 0;
-}
 
 static int* coro_merge_sort(int* ints, int size);
 
@@ -141,51 +92,7 @@ static int* coro_merge_sort(int* ints, int size){
 	return result;
 }
 
-/*
-ход мыслей: псевдокод
-main(){
-	int[] array, int size;
-	
-	mergesort(array, size)
-}
-
-int[] mergesort(int* ints, int size){
-	if (size == 1){
-		return ints;
-
-	int mid;
-
-	sizeA = mid-0;
-	int[] a = mergesort(ints[0], mid);
-
-	sizeB = size-mid;
-	int[] b = mergesort(ints[mid], size-mid);
-	 
-	int counterA = 0, counterB=0, counterRes=0;
-	int[size] result;
-
-	while (counterA < sizeA || counterB < sizeB){
-		if (counterA == sizeA){
-			result[counterRes++]=b[counterB++];
-		}else if (counterB == sizeB){
-			result[counterRes++]=a[counterA++];
-		} else {
-			if (a[counterA]<b[counterB]){
-				result[counterRes++]=a[counterA++];
-			} else{
-			    result[counterRes++]=b[counterB++];
-			}
-		}
-	}
-	return result;
-}
-*/
-
-
 static int* simple_merge_sort(int* ints, int size){
-	
-	
-
 	int mid = size/2;
 	int sizeA = mid-0;
 	int sizeB = size-mid;
@@ -246,8 +153,6 @@ int main(int argc, char **argv)
 		// затем мы берем i-ю строку
 		
 		memcpy(p_arrays[index], elements, sizeof(int) * sizes[index]);
-
-		// for(int i = 0; i < sizes[index]; i++){printf("%d ", p_arrays[index][i]);}
 		// memcpy instead of p_arrays[index-optind] = &elements;
 		}
 	printf("test, %d ", sizes[5]);
@@ -262,9 +167,6 @@ int main(int argc, char **argv)
 	clock_t end = clock();
 	printf("ts sync %f\n", (double)(end - begin) / CLOCKS_PER_SEC);
 	
-
-
-
 	/* Initialize our coroutine global cooperative scheduler. */
 	coro_sched_init();
 	/* Start several coroutines. */
