@@ -5,3 +5,10 @@ all: libcoro.c solution.c
 
 clean:
 	rm a.out
+
+debug:
+	gcc solution.c libcoro.c -g && gdb --args ./a.out test1.txt test2.txt test3.txt test4.txt test5.txt test6.txt
+run:
+	gcc solution.c libcoro.c && ./a.out test1.txt test2.txt test3.txt test4.txt test5.txt test6.txt
+test: 
+	gcc ../test.c -o test && valgrind ./test

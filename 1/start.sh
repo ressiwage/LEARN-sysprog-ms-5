@@ -1,0 +1,1 @@
+gcc solution.c libcoro.c && ./a.out
