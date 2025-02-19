@@ -5,6 +5,8 @@
 #include "libcoro.h"
 #include <assert.h>
 #include <time.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #define MAX_ELEMENTS_IN_FILE 100001
 #define PRINT_SORTED_ARRAYS 0
 
@@ -13,18 +15,20 @@ typedef struct my_context{
 	int num_coroutines;
 	/** ADD HERE YOUR OWN MEMBERS, SUCH AS FILE NAME, WORK TIME, ... */
 	int *ints;
+	int *result;
 	int ints_size;
 } my_context;
 
 typedef struct coro coro;
 
-static my_context* my_context_new(const char *name, int *ints, int ints_size)
+static my_context* my_context_new(const char *name, int *ints, int ints_size, int *result)
 {
 	my_context *ctx = malloc(sizeof(*ctx));
 	ctx->name = strdup(name);
 	ctx->num_coroutines = 0;
 	ctx->ints = ints;
 	ctx->ints_size = ints_size;
+	ctx->result = result;
 	return ctx;
 }
 
@@ -43,10 +47,12 @@ static int* coro_merge_sort_wrapper(void *context){
 	char *name = ctx->name;
 
 	int *returned = coro_merge_sort(ctx->ints, ctx->ints_size);
-	int *result = malloc(sizeof(int)*ctx->ints_size);
-	memcpy(result, returned, ctx->ints_size);
-
-	if(PRINT_SORTED_ARRAYS){for(int i = 0; i <ctx->ints_size;i++){printf("%d ", result[i]);}}
+	memcpy(ctx->result, returned, sizeof(int)*ctx->ints_size );
+	// for(int i=0;i<ctx->ints_size;i++){
+	// 	printf("%d ", returned[i]);
+	// }
+	// for(int i = 0; i <ctx->ints_size;i++){printf("%d ", ctx->result[i]);}
+	
 	
 	my_context_delete(ctx);
 	free(returned);
@@ -134,12 +140,15 @@ int main(int argc, char **argv)
 	int num_files = argc-optind;
 
 	int **p_arrays = malloc(sizeof(int*) * num_files + sizeof(int)* MAX_ELEMENTS_IN_FILE * num_files); //указатели на массивы с числами
+	int **output = malloc(sizeof(int*) * num_files + sizeof(int) * MAX_ELEMENTS_IN_FILE * num_files); 
 	// memset(p_arrays, 0, sizeof(int*) * (argc-optind))
 	unsigned int sizes[num_files];
+	char names[num_files][1024];
 	for (int optindex = optind, index=0; optindex < argc; optindex++, index++){
 		printf ("got argument %s\n", argv[optindex]);
 		//open it
 		FILE *file = fopen(argv[optindex], "r");
+		sprintf(names[index], "%s", argv[optindex]);
 		int elem_ind=0;
 		int elements[MAX_ELEMENTS_IN_FILE];
 		//scan elements
@@ -148,6 +157,7 @@ int main(int argc, char **argv)
 		sizes[index] = elem_ind;
 		//set it to 2d array
 		p_arrays[index] = (int *)(p_arrays+num_files) + ((index) * MAX_ELEMENTS_IN_FILE); 
+		output[index] = (int *)(output+num_files) + ((index) * MAX_ELEMENTS_IN_FILE); 
 		// почему так?
 		// потому что сначала мы берем указательное смещение, т.е. первую строку arr[0]
 		// затем мы берем i-ю строку
@@ -170,15 +180,20 @@ int main(int argc, char **argv)
 	/* Initialize our coroutine global cooperative scheduler. */
 	coro_sched_init();
 	/* Start several coroutines. */
-
+	printf("1\n");
+	// char name[16];
+	// sprintf(name, "coro_%d", 0);
+	printf("2\n");
 	char name[16];
 	sprintf(name, "coro_%d", 0);
-
 	begin = clock();
 
-	for(int i=0; i<sizeof(sizes)/sizeof(sizes[0]); i++){
-		coro_new(coro_merge_sort_wrapper, my_context_new(name, p_arrays[i], sizes[i]));
+	for(int i=0; i<num_files; i++){
+		printf("3\n");
+		
+		coro_new(coro_merge_sort_wrapper, my_context_new(name, p_arrays[i], sizes[i], output[i]));
 	}
+	printf("5\n");
 	/* Wait for all the coroutines to end. */
 	struct coro *c;
 	while ((c = coro_sched_wait()) != NULL) {
@@ -191,9 +206,22 @@ int main(int argc, char **argv)
 		coro_delete(c);
 	}
 	end = clock();
+	printf("1\n");
 	printf("ts async %f\n", (double)(end - begin) / CLOCKS_PER_SEC);
+	printf("4\n");
+	for (int index=0; index < num_files; index++){
+		printf ("%s\n", names[index]);
+		FILE *out = fopen(names[index],  "w+");
+		for(int i = 0; i < sizes[index]; i++){
+			fprintf(out, "%d ", output[index][i]);
+		}
+		//scan elements
+		// while(fscanf(file, "%d", &elements[elem_ind++])==1){}
+
+	}
 	/* All coroutines have finished. */
 	free(p_arrays);
+	free(output);
 	/* IMPLEMENT MERGING OF THE SORTED ARRAYS HERE. */
 	return 0;
 }

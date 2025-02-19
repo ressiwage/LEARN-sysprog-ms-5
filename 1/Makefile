@@ -7,7 +7,7 @@ clean:
 	rm a.out
 
 debug:
-	gcc solution.c libcoro.c -g && gdb --args ./a.out test1.txt test2.txt test3.txt test4.txt test5.txt test6.txt
+	gcc -g solution.c libcoro.c  && gdb --args ./a.out test1.txt test2.txt test3.txt test4.txt test5.txt test6.txt
 run:
 	gcc solution.c libcoro.c && ./a.out test1.txt test2.txt test3.txt test4.txt test5.txt test6.txt
 test: 
